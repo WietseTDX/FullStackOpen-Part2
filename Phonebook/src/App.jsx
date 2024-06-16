@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios'
 import InputForm from './components/InputForm';
 import SearchBar from './components/SearchBar';
 import PhonebookTable from './components/PhonebookTable';
@@ -6,6 +7,15 @@ import PhonebookTable from './components/PhonebookTable';
 const App = () => {
   const [persons, setPersons] = useState([{ name: 'Arto Hellas', number: '06-12345678', id: 0 }]);
   const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    axios
+      .get('http://localhost:3001/persons')
+      .then(response => {
+        console.log("data", response)
+        setPersons(response.data)
+      })
+  }, [])
 
   const AlreadyPresent = (name, array) => {
     return array.some((person) => person.name === name);
