@@ -1,4 +1,4 @@
-const PhonebookTable = ({ persons }) => {
+const PhonebookTable = ({ persons, deleteAction }) => {
   return (
     <table>
       <thead>
@@ -12,6 +12,7 @@ const PhonebookTable = ({ persons }) => {
           <tr key={person.id}>
             <td>{person.name}</td>
             <td>{person.number}</td>
+            <td><button onClick={() => deleteAction(person.id)}>Delete</button></td>
           </tr>
         ))}
       </tbody>

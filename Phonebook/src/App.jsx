@@ -1,28 +1,25 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios'
 import InputForm from './components/InputForm';
 import SearchBar from './components/SearchBar';
 import PhonebookTable from './components/PhonebookTable';
 
+import PhonebookServer from './service/PhonebookServer';
+
 const App = () => {
-  const [persons, setPersons] = useState([{ name: 'Arto Hellas', number: '06-12345678', id: 0 }]);
+  const [persons, setPersons] = useState([{ name: 'Arto Hellas', number: '06-12345678', id: "0" }]);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log("data", response)
-        setPersons(response.data)
-      })
+    PhonebookServer.getAll()
+      .then(response => setPersons(response))
   }, [])
 
-  const AlreadyPresent = (name, array) => {
+  const alreadyPresent = (name, array) => {
     return array.some((person) => person.name === name);
   };
 
   const handleNewEntry = (name, number) => {
-    if (AlreadyPresent(name, persons)) {
+    if (alreadyPresent(name, persons)) {
       alert(`${name} is already in the book`);
       return 1;
     }
@@ -32,12 +29,26 @@ const App = () => {
     }
     const newPerson = {
       name,
-      id: persons.length > 0 ? persons[persons.length - 1].id + 1 : 0,
+      id: (persons.length > 0 ? parseInt(persons[persons.length - 1].id) + 1 : 0).toString(),
       number,
     };
-    setPersons(persons.concat(newPerson));
+    PhonebookServer
+      .create(newPerson)
+      .then(response => setPersons(persons.concat(response)))
     return 0;
   };
+
+  const deleteAction = (id) => {
+    if (window.confirm(`Do you really want to remove ${persons.find(person => person.id === id).name}`)) {
+      PhonebookServer
+        .deletePerson(id)
+        .then(data => setPersons(persons.filter(person => person.id !== data.id)))
+        .catch(data => {  // eslint-disable-line no-unused-vars
+          setPersons(persons.filter(person => person.id !== id))
+          console.log("Data was already gone from the server")
+        })
+    }
+  }
 
   const queryData = persons.filter((person) => {
     if (query === '') {
@@ -54,7 +65,7 @@ const App = () => {
       <InputForm onSubmit={handleNewEntry} />
       <h2>Numbers</h2>
       <SearchBar query={query} onQueryChange={setQuery} />
-      <PhonebookTable persons={queryData} />
+      <PhonebookTable persons={queryData} deleteAction={deleteAction} />
     </div>
   );
 }
