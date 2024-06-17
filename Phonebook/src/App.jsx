@@ -18,10 +18,27 @@ const App = () => {
     return array.some((person) => person.name === name);
   };
 
+  const updatePersonNumber = (name, number) => {
+    const updatedEntry = { ...persons.find((person) => person.name === name), number: number.toString() }
+    PhonebookServer
+      .update(updatedEntry.id, updatedEntry)
+      .then(response => {
+        setPersons((prevPersons) =>
+          prevPersons.map((person) =>
+            person.id !== response.id ? person : response
+          )
+        );
+      })
+  }
+
   const handleNewEntry = (name, number) => {
     if (alreadyPresent(name, persons)) {
-      alert(`${name} is already in the book`);
-      return 1;
+      if (window.confirm(`${name} is already in the phonebook, replace the old number with a new one?`)) {
+        updatePersonNumber(name, number);
+        return 0;
+      } else {
+        return 1;
+      }
     }
     if (number.trim().length === 0) {
       alert('The number field is empty');
