@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import InputForm from './components/InputForm';
 import SearchBar from './components/SearchBar';
 import PhonebookTable from './components/PhonebookTable';
+import Notification from './components/Notification'
 
 import PhonebookServer from './service/PhonebookServer';
 
 const App = () => {
   const [persons, setPersons] = useState([{ name: 'Arto Hellas', number: '06-12345678', id: "0" }]);
   const [query, setQuery] = useState('');
+  const [notificationContent, setNotificationContent] = useState({message: null, error: false});
 
   useEffect(() => {
     PhonebookServer.getAll()
@@ -29,19 +31,25 @@ const App = () => {
           )
         );
       })
+      .catch(response => {  // eslint-disable-line no-unused-vars
+        setPersons(persons.filter(person => person.id !== updatedEntry.id))
+        showNotification(`Information of ${name} has been removed from the server`, true);
+      })
   }
 
   const handleNewEntry = (name, number) => {
     if (alreadyPresent(name, persons)) {
       if (window.confirm(`${name} is already in the phonebook, replace the old number with a new one?`)) {
         updatePersonNumber(name, number);
+        showNotification(`Number of ${name} updateded`, false);
         return 0;
       } else {
+        showNotification(`No update to ${name} record`, false);
         return 1;
       }
     }
     if (number.trim().length === 0) {
-      alert('The number field is empty');
+      showNotification("The number field is empty", true);
       return 2;
     }
     const newPerson = {
@@ -51,7 +59,11 @@ const App = () => {
     };
     PhonebookServer
       .create(newPerson)
-      .then(response => setPersons(persons.concat(response)))
+      .then(response => {
+        setPersons(persons.concat(response));
+        showNotification(`Succesfully added ${response.name}`, false);
+      })
+      .catch(response => showNotification(`Could not add ${newPerson.name}, no connection`, true)); // eslint-disable-line no-unused-vars
     return 0;
   };
 
@@ -59,12 +71,22 @@ const App = () => {
     if (window.confirm(`Do you really want to remove ${persons.find(person => person.id === id).name}`)) {
       PhonebookServer
         .deletePerson(id)
-        .then(data => setPersons(persons.filter(person => person.id !== data.id)))
+        .then(data => {
+          setPersons(persons.filter(person => person.id !== data.id))
+          showNotification(`Succesfully removed ${data.name}`, false);
+        })
         .catch(data => {  // eslint-disable-line no-unused-vars
           setPersons(persons.filter(person => person.id !== id))
-          console.log("Data was already gone from the server")
+          showNotification(`Succesfully removed ${data.name}`, false);
         })
     }
+  }
+
+  const showNotification = (message, error=false, timeOut=3000) => {
+    setNotificationContent({message, error});
+    setTimeout(() => {
+      setNotificationContent({ message: null, error: false });
+    }, timeOut);
   }
 
   const queryData = persons.filter((person) => {
@@ -79,6 +101,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification data={notificationContent} />
       <InputForm onSubmit={handleNewEntry} />
       <h2>Numbers</h2>
       <SearchBar query={query} onQueryChange={setQuery} />
