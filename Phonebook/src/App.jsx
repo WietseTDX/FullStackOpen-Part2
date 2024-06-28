@@ -76,8 +76,8 @@ const App = () => {
           showNotification(`Succesfully removed ${data.name}`, false);
         })
         .catch(data => {  // eslint-disable-line no-unused-vars
+          showNotification(`Succesfully removed ${persons.find(person => person.id === id).name}`, false);
           setPersons(persons.filter(person => person.id !== id))
-          showNotification(`Succesfully removed ${data.name}`, false);
         })
     }
   }
